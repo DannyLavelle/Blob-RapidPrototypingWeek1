@@ -16,10 +16,16 @@ public class JumpScript : MonoBehaviour
     // Aiming variables
     private Vector2 aimDirection = Vector2.up; // Default aim direction is upward
 
+    // Jump aim indicator variables
+    public LineRenderer jumpAimIndicator; // Assign the "LineRenderer" GameObject in the Inspector
+    public GameObject arrow; // Assign the "Arrow" GameObject in the Inspector
+    public float aimIndicatorLength = 2f; // Length of the jump aim indicator
+
     private Rigidbody2D rb;
 
     private void Start()
     {
+        
         rb = GetComponent<Rigidbody2D>();
         jumpsRemaining = maxJumps;
     }
@@ -60,6 +66,29 @@ public class JumpScript : MonoBehaviour
             rb.velocity = Vector2.zero;
             rb.AddForce(-surfaceNormal * 10f, ForceMode2D.Impulse);
         }
+
+        // Update JumpAimIndicator position and rotation
+        UpdateJumpAimIndicator();
+    }
+
+    private void UpdateJumpAimIndicator()
+    {
+        if (jumpAimIndicator != null)
+        {
+            Vector3 startPoint = transform.position; // Start from the character's position
+            Vector3 endPoint = startPoint + new Vector3(aimDirection.x, aimDirection.y, 0f).normalized * aimIndicatorLength; // Set the length of the indicator line
+
+            // Update the position of the JumpAimIndicator
+            jumpAimIndicator.SetPosition(0, startPoint);
+            jumpAimIndicator.SetPosition(1, endPoint);
+
+            // Position and rotate the arrow at the end of the line
+            if (arrow != null)
+            {
+                arrow.transform.position = endPoint;
+                arrow.transform.rotation = Quaternion.LookRotation(Vector3.forward, endPoint - startPoint);
+            }
+        }
     }
 
     private void OnCollisionEnter2D(Collision2D collision)
@@ -83,7 +112,7 @@ public class JumpScript : MonoBehaviour
         if (jumpsRemaining > 0)
         {
             Vector2 jumpDirection = aimDirection * currentJumpPower;
-            rb.velocity = Vector2.zero; // Reset both horizontal and vertical velocities
+            rb.velocity = new Vector2(0f, rb.velocity.y); // Reset horizontal velocity, keep vertical velocity
             rb.AddForce(jumpDirection, ForceMode2D.Impulse);
             currentJumpPower = 0f;
             jumpsRemaining--; // Decrement jumps
