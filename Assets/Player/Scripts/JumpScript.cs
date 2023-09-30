@@ -10,7 +10,7 @@ public class JumpScript : MonoBehaviour
     private float currentJumpPower = 0f;
 
     // Surface sticking variables
-    private bool isSticking = false;
+    private bool CanStick = false;
     private Vector2 surfaceNormal;
 
     // Aiming variables
@@ -20,12 +20,12 @@ public class JumpScript : MonoBehaviour
     public LineRenderer jumpAimIndicator; // Assign the "LineRenderer" GameObject in the Inspector
     public GameObject arrow; // Assign the "Arrow" GameObject in the Inspector
     public float aimIndicatorLength = 2f; // Length of the jump aim indicator
-
+    public float maxStickForce = 10f;
     private Rigidbody2D rb;
 
     private void Start()
     {
-        
+
         rb = GetComponent<Rigidbody2D>();
         jumpsRemaining = maxJumps;
     }
@@ -35,14 +35,14 @@ public class JumpScript : MonoBehaviour
         // Read controller input
         float horizontalInput = Input.GetAxis("Horizontal");
         float verticalInput = Input.GetAxis("Vertical");
-        bool rightTriggerPressed = Input.GetButton("Fire1");
+        bool JumpButtonPressed = Input.GetButton("Fire1");
         bool leftTriggerPressed = Input.GetButton("Fire2");
 
         // Aim the jump using right analog stick
         aimDirection = new Vector2(horizontalInput, verticalInput).normalized;
 
         // Jump charging
-        if (rightTriggerPressed)
+        if (JumpButtonPressed)
         {
             if (currentJumpPower < maxJumpPower)
             {
@@ -61,11 +61,21 @@ public class JumpScript : MonoBehaviour
         }
 
         // Surface sticking
-        if (leftTriggerPressed && isSticking)
+        if (leftTriggerPressed && CanStick)
         {
-            rb.velocity = Vector2.zero;
-            rb.AddForce(-surfaceNormal * 10f, ForceMode2D.Impulse);
+            rb.velocity = Vector2.zero; // Stop all current movement
+
+            // Limit the force to prevent being flung too forcefully
+            Vector2 stickForce = -surfaceNormal * 10f;
+            rb.AddForce(Vector2.ClampMagnitude(stickForce, maxStickForce), ForceMode2D.Impulse);
         }
+
+        //// Surface sticking
+        //if (leftTriggerPressed && CanStick)
+        //{
+        //    rb.velocity = Vector2.zero; // Stop all current movement
+        //    rb.AddForce(-surfaceNormal * 10f, ForceMode2D.Impulse); // Add the impulse force
+        //}
 
         // Update JumpAimIndicator position and rotation
         UpdateJumpAimIndicator();
@@ -93,18 +103,31 @@ public class JumpScript : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        switch (collision.gameObject.tag)
+        {
+            case "Sticky Surface":
+            //Debug.Log("colliede with tag");
+            CanStick = true;
+            break;
+            default:
+            //Debug.Log("collided with unknown");
+            break;
+        }
+    }
+    private void OnCollisionStay2D(Collision2D collision)
+    {
         if (collision.contacts.Length > 0)
         {
             ContactPoint2D contact = collision.contacts[0];
             surfaceNormal = contact.normal;
-            isSticking = true;
+
             jumpsRemaining = maxJumps; // Reset jumps when touching the ground
         }
     }
 
     private void OnCollisionExit2D(Collision2D collision)
     {
-        isSticking = false;
+        CanStick = false;
     }
 
     private void Jump()
