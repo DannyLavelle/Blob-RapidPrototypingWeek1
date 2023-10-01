@@ -26,5 +26,9 @@ public class DoomScript : MonoBehaviour
             menu.DeathSequence();
         }
     }
+    //private void OnTriggerExit2D(Collider2D other)
+    //{
+    //    Destroy(other.gameObject);
+    //}
 
 }

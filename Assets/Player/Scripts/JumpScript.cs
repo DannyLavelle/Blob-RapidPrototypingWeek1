@@ -1,17 +1,22 @@
+using UnityEditor;
 using UnityEngine;
+using UnityEngine.InputSystem;
+using UnityEngine.UI;
 
 public class JumpScript : MonoBehaviour
 {
+    //private Renderer objectRenderer;
     // Jump variables
     public float maxJumpPower = 10f;
     public int maxJumps = 2; // Number of jumps allowed
     private int jumpsRemaining; // Number of jumps left
     private bool isChargingJump = false;
     private float currentJumpPower = 0f;
-
+    public GameObject Menu;
     // Surface sticking variables
     private bool CanStick = false;
     private Vector2 surfaceNormal;
+    public Slider ChargeSlider;
 
     // Aiming variables
     private Vector2 aimDirection = Vector2.up; // Default aim direction is upward
@@ -21,25 +26,104 @@ public class JumpScript : MonoBehaviour
     public GameObject arrow; // Assign the "Arrow" GameObject in the Inspector
     public float aimIndicatorLength = 2f; // Length of the jump aim indicator
     public float maxStickForce = 10f;
-    private Rigidbody2D rb;
+    public Rigidbody2D rb;
 
+  
+    //Begin Test area
+    public PlayerControls playerControls;
+    private InputAction Look;
+    private InputAction jump;
+    private InputAction Stick;
+    private InputAction Pause;
+    bool JumpButtonPressed;
+    bool leftTriggerPressed;
+    private void Awake()
+    {
+        playerControls = new PlayerControls();
+    }
+    private void OnEnable()
+    {
+        Look = playerControls.Player.Look;
+        Look.Enable();
+        jump = playerControls.Player.Jump;
+        jump.Enable();
+        jump.started += Jump;
+        jump.canceled += JumpRelease;
+        Stick = playerControls.Player.Stick;
+        Stick.Enable();
+        Stick.started += PressLT;
+        Stick.canceled += ReleaseLT;
+        Pause = playerControls.Player.Pause;
+        Pause.Enable();
+        Pause.performed += PauseButtonPress;
+    }
+    private void OnDisable()
+    {
+        Look.Disable();
+        jump.Disable();
+        jump.started -= Jump;
+        jump.canceled -= JumpRelease;
+        Stick.Disable();
+        Stick.started -= PressLT;
+        Stick.canceled -= ReleaseLT;
+        Pause.Disable();
+        Pause.performed -= PauseButtonPress;
+       
+
+    }
+    private void Jump(InputAction.CallbackContext context)
+    {
+        JumpButtonPressed = true;
+    }
+    private void JumpRelease(InputAction.CallbackContext context)
+    {
+        JumpButtonPressed = false;
+        JumpCharacter();
+    }
+    private void PressLT(InputAction.CallbackContext context)
+    {
+        leftTriggerPressed = true;
+    }
+    private void ReleaseLT(InputAction.CallbackContext context)
+    {
+        leftTriggerPressed = false;
+    }
+    private void PauseButtonPress(InputAction.CallbackContext context)
+    {
+        MenuController menu = Menu.GetComponent<MenuController>();
+        menu.pausebuttonpressed();
+    }
+    //End Test area
     private void Start()
     {
 
         rb = GetComponent<Rigidbody2D>();
+        //objectRenderer = GetComponent<Renderer>();
         jumpsRemaining = maxJumps;
     }
 
+
     private void Update()
     {
+        //if (currentJumpPower == maxJumpPower)
+        //{
+        //    objectRenderer.material.color = Color.red;
+        //}
+        //else
+        //{
+        //    objectRenderer.material.color = Color.white;
+        //}
+
+
         // Read controller input
-        float horizontalInput = Input.GetAxis("Horizontal");
-        float verticalInput = Input.GetAxis("Vertical");
-        bool JumpButtonPressed = Input.GetButton("Fire1");
-        bool leftTriggerPressed = Input.GetButton("Fire2");
+        //float horizontalInput = Input.GetAxis("Horizontal");
+        //float verticalInput = Input.GetAxis("Vertical");
+        //bool JumpButtonPressed = Input.GetButton("Fire1");
+        //bool leftTriggerPressed = Input.GetButton("Fire2");
 
         // Aim the jump using right analog stick
-        aimDirection = new Vector2(horizontalInput, verticalInput).normalized;
+        aimDirection = Look.ReadValue<Vector2>();   
+        //aimDirection = new Vector2(horizontalInput, verticalInput).normalized;
 
         // Jump charging
         if (JumpButtonPressed)
@@ -47,18 +131,22 @@ public class JumpScript : MonoBehaviour
             if (currentJumpPower < maxJumpPower)
             {
                 currentJumpPower += Time.deltaTime * (maxJumpPower / 2f);
+                ChargeSlider.value = Getpowerpercent();
             }
             else
             {
                 currentJumpPower = maxJumpPower;
+                ChargeSlider.value = Getpowerpercent();
+
+
             }
         }
 
         // Jumping
-        if (Input.GetButtonUp("Fire1"))
-        {
-            Jump();
-        }
+        //if (Input.GetButtonUp("Fire1"))
+        //{
+        //    JumpCharacter();
+        //}
 
         // Surface sticking
         if (leftTriggerPressed && CanStick)
@@ -130,15 +218,22 @@ public class JumpScript : MonoBehaviour
         CanStick = false;
     }
 
-    private void Jump()
+    private void JumpCharacter()
     {
         if (jumpsRemaining > 0)
         {
+            
             Vector2 jumpDirection = aimDirection * currentJumpPower;
             rb.velocity = new Vector2(0f, rb.velocity.y); // Reset horizontal velocity, keep vertical velocity
             rb.AddForce(jumpDirection, ForceMode2D.Impulse);
             currentJumpPower = 0f;
+            ChargeSlider.value = Getpowerpercent();
             jumpsRemaining--; // Decrement jumps
         }
+    }
+    public float Getpowerpercent()
+    {
+        float powerpercent = currentJumpPower / maxJumpPower;
+        return powerpercent;
     }
 }

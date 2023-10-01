@@ -5,7 +5,7 @@ public class BlockSpawner : MonoBehaviour
     public GameObject[] blockPrefabs; // Array of block prefabs to spawn
     public float spawnHeight = 45f; // Height above the spawner to spawn blocks
     public float moveDistance = 45f; // Distance to move the spawner upwards after spawning
-
+    public GameObject Water;
     public Transform playerTransform;
     private float lastPlayerY;
 
@@ -18,7 +18,7 @@ public class BlockSpawner : MonoBehaviour
     private void Update()
     {
         // Define a threshold for Y position comparison
-        float positionThreshold = 0.1f; // Adjust this value as needed
+        float positionThreshold = 1f; // Adjust this value as needed
 
         // Check if the player's Y position is close to the object's Y position
         if (Mathf.Abs(playerTransform.position.y - transform.position.y) < positionThreshold)
@@ -47,5 +47,7 @@ public class BlockSpawner : MonoBehaviour
 
         // Move the spawner upwards by the specified distance
         transform.Translate(Vector3.up * moveDistance);
+        DoomScript doomScript = Water.GetComponent<DoomScript>();
+        doomScript.IncreaseSpeed();
     }
 }

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 
@@ -10,9 +11,14 @@ public class MenuController : MonoBehaviour
     [SerializeField]
     public GameObject HUD;
     public GameObject DeathPanel;
+    public GameObject PausePanel;
+    private float timer = 0f;
+    public TMP_Text TimerText;
+    public TMP_Text Gameovertimer;
     private void Start()
-    {
-        if(IsGamePaused =true)
+    {   IsGamePaused = true;
+        StartTimer();
+        if(IsGamePaused == true)
         {
             PauseControl();
         }
@@ -25,7 +31,7 @@ public class MenuController : MonoBehaviour
     {
         int currentSceneIndex = SceneManager.GetActiveScene().buildIndex;
         SceneManager.LoadScene(currentSceneIndex);
-        IsGamePaused = false;
+        IsGamePaused = true;
     }
     void PauseControl()//Toggles Pause/Unpause
     {
@@ -56,6 +62,13 @@ public class MenuController : MonoBehaviour
     public void DeathSequence()
     {
         PauseControl();
+        int minutes = Mathf.FloorToInt(timer / 60);
+        int seconds = Mathf.FloorToInt(timer % 60);
+
+        // Format the timer text with minutes and seconds
+        string timerTextString = string.Format("You Survived: {0:00}:{1:00}", minutes, seconds);
+
+        Gameovertimer.text = timerTextString;
         DeathPanel.SetActive(true);
     }
     void UnlockCursor()
@@ -67,5 +80,52 @@ public class MenuController : MonoBehaviour
     {
         Cursor.lockState = CursorLockMode.Confined;
         Cursor.visible = false;
+    }
+    private void StartTimer()
+    {
+        InvokeRepeating("UpdateTimer", 1f, 1f); // Update the countdown every second
+    }
+    private void UpdateTimer()
+    {
+        timer++;
+        UpdateTimerDisplay();
+
+    
+    }
+
+    private void UpdateTimerDisplay()
+    {
+        // Calculate minutes and seconds
+        int minutes = Mathf.FloorToInt(timer / 60);
+        int seconds = Mathf.FloorToInt(timer % 60);
+
+        // Format the timer text with minutes and seconds
+        string timerTextString = string.Format("Time: {0:00}:{1:00}", minutes, seconds);
+
+        // Update the UI text
+        TimerText.text = timerTextString;
+    }
+
+    public void pausebuttonpressed()
+    {
+        if(IsGamePaused == true)
+        {
+            Resume();
+        }
+        else
+        {
+            pauseButton();
+        }
+    }
+    private void Resume()
+    {
+        PausePanel.SetActive(false);
+       PauseControl();
+    }
+
+    public void pauseButton()
+    {
+        PauseControl();
+        PausePanel.SetActive(true);
     }
 }
